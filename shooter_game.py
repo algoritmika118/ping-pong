@@ -1,27 +1,19 @@
 from pygame import*
-from random import randint
 
 font.init()
-font1 = font.Font(None, 80)
+font1 = font.Font(None, 35)
 win = font1.render('YOU WIN!', True, (255, 255, 255))
 lose = font1.render('YOU LOSE!', True, (180, 0, 0))
 
 font2 = font.Font(None, 36)
 
-mixer.init()
-mixer.music.load('space.ogg')
-mixer.music.play()
-fire_sound = mixer.Sound('fire.ogg')
+win_width = 700
+win_height = 500
+window = display.set_mode((win_width, win_height))
+speed_x = 3
+speed_y = 3
+back = (200,255,255)
 
-
-img_back = "galaxy.jpg" 
-img_bullet = "bullet.png" 
-img_hero = "rocket.png" 
-img_enemy = "ufo.png" 
-score = 0 
-goal = 10 
-lost = 0 
-max_lost = 3 
 
 class GameSprite(sprite.Sprite):
     def __init__(self, player_image, player_x, player_y, size_x, size_y, player_speed):
@@ -36,66 +28,53 @@ class GameSprite(sprite.Sprite):
         window.blit(self.image, (self.rect.x, self.rect.y))
 
 class Player(GameSprite):
-    def update(self):
+    def update_r(self):
         keys = key.get_pressed()
-        if keys[K_LEFT] and self.rect.x > 5:
+        if keys[K_UP] and self.rect.x > 5:
             self.rect.x -= self.speed
-        if keys[K_RIGHT] and self.rect.x < win_width - 80:
+        if keys[K_DOWN] and self.rect.x < win_width - 80:
+            self.rect.x += self.speed
+    def update_l(self):
+        keys = key.get_pressed()
+        if keys[K_w] and self.rect.x > 5:
+            self.rect.x -= self.speed
+        if keys[K_s] and self.rect.x < win_width - 80:
             self.rect.x += self.speed
 
-    def fire(self):
-        bullet = Bullet(img_bullet, self.rect.centerx, self.rect.top, 15, 20, -15)
-        bullets.add(bullet)
-
-class Enemy(GameSprite):
-    def update(self):
-        self.rect.y += self.speed
-        global lost
-        if self.rect.y > win_height:
-            self.rect.x = randint(80, win_width - 80)
-            self.rect.y = 0
-            lost = lost + 1
-
-class Bullet(GameSprite):
-    def update(self):
-        self.rect.y += self.speed
-        if self.rect.y < 0:
-            self.kill()
-
-win_width = 700
-win_height = 500
-display.set_caption("Shooter")
-window = display.set_mode((win_width, win_height))
-background = transform.scale(image.load(img_back), (win_width, win_height))
-
-ship = Player(img_hero, 5, win_height - 100, 80, 100, 10)
-
-monsters = sprite.Group()
-for i in range(1, 6):
-    monster = Enemy(img_enemy, randint(80, win_width - 80), -40, 80, 50, randint(1, 5))
-    monsters.add(monster)
-bullets = sprite.Group()
+rasket1 = Player('racket.png', 30, 200, 4, 50, 150)
+rasket2 = Player('racket.png', 520, 200, 4, 50, 150)
+ball = GameSprite('tennis_ball.png', 200, 200, 4, 50, 50)
 
 finish = False
+game = True
+clock = time.Clock()
+FPS = 60
 
-run = True 
-while run:
+while game:
     for e in event.get():
         if e.type == QUIT:
-            run = False
-        elif e.type == KEYDOWN:
-            if e.key == K_SPACE:
-                fire_sound.play()
-                ship.fire()
-    if not finish:
-        window.blit(background,(0,0))
-        text = font2.render('Счёт:' + str(score), 1, (255, 255, 255))
-        window.blit(text, (10, 20))
-        text_lose = font2.render('Пропущено:' + str(lost), 1, (255, 255, 255))
-        window.blit(text_lose, (10, 50))
-        ship.update()
-        monsters.update()
-        bullets.update()
-        ship.reset()
-        display.update()
-    time.delay(50)
+            game = False
+    if finish != True:
+        window.fill(back)
+        rasket1.update_l()
+        rasket2.update_r()
+        ball.rect.x += speed_x
+        ball.rect.y += speed_y
+        if sprite.collide_rect(rasket1, ball) or sprite.collide_rect(rasket2, ball):
+            speed_x *= -1
+            speed_y *= 1
+    if ball.rect.y > win_height-50 or ball.rect.y < 0:
+        speed_y *= -1
+    if ball.rect.x < 0:
+        finish = True
+        window.blit(win, (200,200))
+        game_over = True
+    if ball.rect.x > win_width:
+        finish = True
+        window.blit(lose, (200, 200))
+        game_over = True
+    rasket1.reset()
+    rasket2.reset()
+    ball.reset()
+    display.update()
+    clock.tick(FPS)
